@@ -30,11 +30,13 @@ class _MyAppState extends State<MyApp> {
       themeMode: _themeMode,
       theme: ThemeData(
         brightness: Brightness.light,
-        primarySwatch: Colors.blue,
+        colorSchemeSeed: Colors.blue,
+        useMaterial3: true,
       ),
       darkTheme: ThemeData(
         brightness: Brightness.dark,
-        primarySwatch: Colors.teal,
+        colorSchemeSeed: Colors.teal,
+        useMaterial3: true,
       ),
       home: FadingTextAnimation(
         onToggleTheme: _toggleTheme,
@@ -61,6 +63,8 @@ class FadingTextAnimation extends StatefulWidget {
 
 class _FadingTextAnimationState extends State<FadingTextAnimation>
     with SingleTickerProviderStateMixin {
+  static const _fadeDuration = Duration(seconds: 2);
+
   bool _isVisible = true;
   bool _showFrame = false;
   Color _textColor = Colors.deepPurple;
@@ -85,11 +89,7 @@ class _FadingTextAnimationState extends State<FadingTextAnimation>
     super.dispose();
   }
 
-  void _toggleVisibility() {
-    setState(() {
-      _isVisible = !_isVisible;
-    });
-  }
+  void _toggleVisibility() => setState(() => _isVisible = !_isVisible);
 
   void _pickColor() {
     showDialog(
@@ -122,7 +122,7 @@ class _FadingTextAnimationState extends State<FadingTextAnimation>
       onTap: _toggleVisibility,
       child: AnimatedOpacity(
         opacity: _isVisible ? 1.0 : 0.0,
-        duration: const Duration(seconds: 2),
+        duration: _fadeDuration,
         curve: Curves.easeInOut,
         child: Container(
           decoration: _showFrame
@@ -152,7 +152,7 @@ class _FadingTextAnimationState extends State<FadingTextAnimation>
       children: [
         AnimatedOpacity(
           opacity: _isVisible ? 1.0 : 0.0,
-          duration: const Duration(seconds: 2),
+          duration: _fadeDuration,
           curve: Curves.easeInOut,
           child: Text(
             "✨ Hello, Flutter!",
@@ -190,32 +190,49 @@ class _FadingTextAnimationState extends State<FadingTextAnimation>
     );
   }
 
-  /// Screen 2: slower fading + scaling text
+  /// Screen 2: gradient background + bouncing text (merged with fading/scale)
   Widget _buildSecondScreen() {
-    return Center(
-      child: AnimatedOpacity(
-        opacity: _isVisible ? 1.0 : 0.0,
-        duration: const Duration(seconds: 4),
-        curve: Curves.easeInOut,
-        child: AnimatedScale(
-          scale: _isVisible ? 1.0 : 0.6,
-          duration: const Duration(seconds: 4),
-          curve: Curves.elasticOut,
-          child: Text(
-            "🚀 Second Screen Animation!",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: _textColor,
-              letterSpacing: 1.2,
-              shadows: [
-                Shadow(
-                  blurRadius: 8,
-                  color: Colors.black.withOpacity(0.5),
-                  offset: const Offset(3, 3),
-                ),
-              ],
+    return AnimatedContainer(
+      duration: const Duration(seconds: 3),
+      curve: Curves.linearToEaseOut,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: _isVisible
+              ? [Colors.pink.shade400, Colors.deepPurple.shade600]
+              : [Colors.teal.shade300, Colors.blue.shade600],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(25),
+      ),
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
+      child: Center(
+        child: AnimatedOpacity(
+          opacity: _isVisible ? 1.0 : 0.0,
+          duration: const Duration(seconds: 3),
+          curve: Curves.easeInOut,
+          child: AnimatedScale(
+            scale: _isVisible ? 1.0 : 0.6,
+            duration: const Duration(seconds: 3),
+            curve: Curves.elasticOut,
+            child: AnimatedDefaultTextStyle(
+              duration: const Duration(seconds: 2),
+              curve: Curves.bounceOut,
+              style: TextStyle(
+                fontSize: _isVisible ? 34 : 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: _isVisible ? 3 : 1,
+                shadows: const [
+                  Shadow(
+                    blurRadius: 12,
+                    color: Colors.black54,
+                    offset: Offset(4, 4),
+                  ),
+                ],
+              ),
+              child: const Text("🚀 Stunning Animation!"),
             ),
           ),
         ),
@@ -258,9 +275,9 @@ class _FadingTextAnimationState extends State<FadingTextAnimation>
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: const Text("🎨 Fading Text Animation"),
+          title: const Text("🎨 Professional Animation App"),
           centerTitle: true,
-          elevation: 6,
+          elevation: 8,
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(
               bottom: Radius.circular(20),
@@ -282,7 +299,8 @@ class _FadingTextAnimationState extends State<FadingTextAnimation>
             Expanded(
               child: PageView(
                 controller: _pageController,
-                onPageChanged: (index) => setState(() => _currentPage = index),
+                onPageChanged: (index) =>
+                    setState(() => _currentPage = index),
                 children: [
                   _buildFirstScreen(),
                   _buildSecondScreen(),
@@ -300,7 +318,15 @@ class _FadingTextAnimationState extends State<FadingTextAnimation>
           curve: Curves.easeInOut,
           child: FloatingActionButton(
             onPressed: _toggleVisibility,
-            child: Icon(_isVisible ? Icons.pause : Icons.play_arrow),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              transitionBuilder: (child, animation) =>
+                  ScaleTransition(scale: animation, child: child),
+              child: Icon(
+                _isVisible ? Icons.pause : Icons.play_arrow,
+                key: ValueKey(_isVisible),
+              ),
+            ),
           ),
         ),
       ),
